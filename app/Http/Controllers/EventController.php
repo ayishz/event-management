@@ -7,59 +7,77 @@ use Illuminate\Http\Request;
 
 class EventController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        //
+        $events = Event::all();
+        return view('events.index', compact('events'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
-        //
+        return view('events.create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'title' => 'required',
+            'image' => 'image|mimes:jpg,jpeg,png|max:2048'
+        ]);
+
+        $imagePath = null;
+        if ($request->hasFile('image')) {
+            $imagePath = $request->file('image')->store('events', 'public');
+        }
+
+        Event::create([
+            'title' => $request->title,
+            'description' => $request->description,
+            'event_date' => $request->event_date,
+            'location' => $request->location,
+            'image' => $imagePath
+        ]);
+
+        return redirect()->route('events.index')->with('success','Event created');
+    }
+    public function edit($id)
+{
+    $event = Event::findOrFail($id);
+    return view('events.edit', compact('event'));
+}
+
+public function update(Request $request, $id)
+{
+    $event = Event::findOrFail($id);
+
+    $request->validate([
+        'title' => 'required',
+        'image' => 'image|mimes:jpg,jpeg,png|max:2048'
+    ]);
+
+    $data = $request->only(['title', 'description', 'event_date', 'location']);
+
+    if ($request->hasFile('image')) {
+        $data['image'] = $request->file('image')->store('events', 'public');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Event $event)
-    {
-        //
+    $event->update($data);
+
+    return redirect()->route('events.index')->with('success','Event updated successfully');
+}
+
+public function destroy($id)
+{
+    $event = Event::findOrFail($id);
+    
+    // Delete image from storage
+    if ($event->image) {
+        \Storage::disk('public')->delete($event->image);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Event $event)
-    {
-        //
-    }
+    $event->delete();
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Event $event)
-    {
-        //
-    }
+    return redirect()->route('events.index')->with('success','Event deleted successfully');
+}
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Event $event)
-    {
-        //
-    }
 }
