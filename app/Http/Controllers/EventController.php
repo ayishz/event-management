@@ -7,11 +7,21 @@ use Illuminate\Http\Request;
 
 class EventController extends Controller
 {
-    public function index()
-    {
+    public function index(Request $request)
+{
+    $search = $request->input('search');
+
+    if ($search) {
+        $events = Event::where('title', 'like', "%$search%")
+                       ->orWhere('event_date', 'like', "%$search%")
+                       ->get();
+    } else {
         $events = Event::all();
-        return view('events.index', compact('events'));
     }
+
+    return view('events.index', compact('events'));
+}
+
 
     public function create()
     {
